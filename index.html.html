@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCI Learning Tool</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg-card: #1e293b;
+    --bg-card-hover: #334155;
+    --bg-panel: #1a2540;
+    --border: #334155;
+    --border-active: #60a5fa;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-bright: #f8fafc;
+    --accent: #60a5fa;
+    --accent-dim: #3b82f6;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --cde: #ef4444;
+    --lit: #fbbf24;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --bg-panel: #f1f5f9;
+      --border: #e2e8f0;
+      --border-active: #3b82f6;
+      --text: #1e293b;
+      --text-dim: #64748b;
+      --text-bright: #0f172a;
+      --accent: #3b82f6;
+      --accent-dim: #2563eb;
+      --lit: #d97706;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    min-height: 100vh;
+  }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  header { padding: 24px 0 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  h1 { margin: 0 0 4px 0; font-size: 26px; color: var(--text-bright); font-weight: 600; }
+  .subtitle { color: var(--text-dim); font-size: 14px; margin: 0; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+
+  .tab {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    padding: 12px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .section-title {
+    font-size: 18px;
+    color: var(--text-bright);
+    margin: 0 0 8px 0;
+    font-weight: 600;
+  }
+  .section-subtitle {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 0 0 20px 0;
+  }
+
+  .reference-model {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+
+  .actors-row {
+    display: flex;
+    gap: 10px;
+    min-width: min-content;
+    align-items: stretch;
+  }
+
+  .actor {
+    background: var(--bg-panel);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: 130px;
+    text-align: center;
+    position: relative;
+  }
+  .actor:hover {
+    border-color: var(--border-active);
+    transform: translateY(-2px);
+  }
+  .actor.active {
+    border-color: var(--accent);
+    background: var(--bg-card-hover);
+  }
+
+  /* Setup-mode states */
+  .actor.lit {
+    border-color: var(--lit);
+    background: var(--bg-card-hover);
+    box-shadow: 0 0 0 1px var(--lit), 0 0 12px rgba(251, 191, 36, 0.25);
+  }
+  .actor.dimmed {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .actor.dimmed:hover {
+    transform: none;
+    border-color: var(--border);
+  }
+  .actor.skipped {
+    opacity: 0.2;
+    cursor: not-allowed;
+    border-style: dashed;
+  }
+  .actor.skipped:hover {
+    transform: none;
+  }
+
+  .actor-number { font-size: 10px; color: var(--text-dim); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .actor-name { font-size: 13px; color: var(--text-bright); font-weight: 600; line-height: 1.3; margin-bottom: 6px; }
+  .actor-phase { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .actor-vendor {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--lit);
+    font-weight: 600;
+    line-height: 1.3;
+    min-height: 14px;
+  }
+  .actor.skipped .actor-vendor {
+    color: var(--text-dim);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  /* ---- Setup selector strip ---- */
+  .setup-selector {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+
+  .selector-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .selector-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 16px;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+  }
+  .chip:hover {
+    border-color: var(--border-active);
+    color: var(--text-bright);
+  }
+  .chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0f172a;
+    font-weight: 600;
+  }
+  .chip.universal {
+    border-color: var(--text-dim);
+  }
+  .chip.universal.active {
+    background: var(--text-bright);
+    border-color: var(--text-bright);
+    color: var(--bg);
+  }
+
+  .detail-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    min-height: 200px;
+  }
+
+  .detail-panel.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-style: italic;
+    text-align: center;
+  }
+
+  .detail-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .detail-title {
+    font-size: 22px;
+    color: var(--text-bright);
+    font-weight: 600;
+    margin: 0;
+  }
+  .detail-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: var(--bg-panel);
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .detail-badge.lit {
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--lit);
+  }
+
+  .detail-section { margin-bottom: 24px; }
+  .detail-section:last-child { margin-bottom: 0; }
+
+  .detail-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .detail-content {
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+  .detail-content p { margin: 0 0 12px 0; }
+  .detail-content p:last-child { margin-bottom: 0; }
+
+  .vendor-list { display: flex; flex-direction: column; gap: 14px; }
+  .vendor-item {
+    background: var(--bg-panel);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 14px 18px;
+  }
+  .vendor-name { font-weight: 600; color: var(--text-bright); margin-bottom: 6px; font-size: 15px; }
+  .vendor-field { font-size: 13px; color: var(--text); margin-top: 8px; line-height: 1.6; }
+  .vendor-field strong { color: var(--accent); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; display: block; margin-bottom: 2px; }
+
+  .glossary-list { display: flex; flex-direction: column; gap: 10px; }
+  .glossary-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+  .glossary-term { font-weight: 600; color: var(--accent); margin-bottom: 4px; font-size: 15px; }
+  .glossary-def { color: var(--text); font-size: 14px; line-height: 1.65; }
+  .glossary-related { margin-top: 6px; font-size: 12px; color: var(--text-dim); }
+
+  .context-list { display: flex; flex-direction: column; gap: 16px; }
+  .context-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 18px 22px;
+  }
+  .context-topic { font-size: 16px; font-weight: 600; color: var(--text-bright); margin-bottom: 10px; }
+  .context-explanation { color: var(--text); font-size: 14px; line-height: 1.7; }
+  .context-explanation p { margin: 0 0 10px 0; }
+  .context-explanation p:last-child { margin-bottom: 0; }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .container { padding: 12px; }
+    .actors-row { flex-wrap: wrap; }
+    .actor { min-width: 110px; flex-basis: calc(50% - 5px); }
+    .tab { padding: 10px 12px; font-size: 13px; }
+    .detail-panel { padding: 18px; }
+    h1 { font-size: 22px; }
+    .chip { padding: 6px 12px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <h1>PCI Learning Tool</h1>
+    <p class="subtitle">How credit card transactions work at the University of South Alabama</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="flow">Transaction Flow &amp; Setups</button>
+    <button class="tab" data-tab="context">PCI Context</button>
+    <button class="tab" data-tab="glossary">Glossary</button>
+  </nav>
+
+  <div class="tab-panel active" id="tab-flow">
+    <h2 class="section-title">The Universal Transaction Flow</h2>
+    <p class="section-subtitle">The 7 actors below appear in every credit card transaction. Click any actor to learn what it does. Or, pick a Campus Payment Setup below to see how the flow looks for that specific USA configuration.</p>
+
+    <div class="reference-model">
+      <div class="actors-row" id="actors-row"></div>
+    </div>
+
+    <div class="setup-selector">
+      <div class="selector-label">View mode</div>
+      <div class="selector-chips" id="selector-chips"></div>
+    </div>
+
+    <div class="detail-panel empty" id="detail-panel">Pick a payment setup above, or click any actor in the flow to see its details.</div>
+  </div>
+
+  <div class="tab-panel" id="tab-context">
+    <h2 class="section-title">PCI Context for USA</h2>
+    <p class="section-subtitle">How PCI DSS v4.0.1 and current industry trends intersect with USA's payment environment.</p>
+    <div class="context-list" id="context-list"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-glossary">
+    <h2 class="section-title">Glossary</h2>
+    <p class="section-subtitle">PCI and payment terms in plain English.</p>
+    <div class="glossary-list" id="glossary-list"></div>
+  </div>
+
+  <footer>PCI Learning Tool · Ryan Roach, Merchant Services &amp; PCI Compliance · Last content review: April 2026</footer>
+
+</div>
+
+<script>
+// ============================================================
+// CONTENT — all hardcoded
+// ============================================================
+
+const ACTORS = [
+  {
+    id: 'cardholder',
+    name: 'Cardholder',
+    phase: 'both',
+    what_it_does: 'The person using the credit or debit card to make a purchase. This could be a student paying tuition, a parent paying a housing deposit, an alum buying Athletics tickets, or a patient paying a hospital bill. The cardholder is the start and end of every transaction — they tap, swipe, dip, or type in a card number, and they eventually see either "approved" or "declined" on a screen.',
+    why_it_exists: 'Self-evident — no cardholder, no transaction. But it is worth naming them as the first actor in the diagram because every other actor in the chain exists to serve this moment: a person wanting to pay money for a thing.',
+    pci_implications: 'PCI DSS protects this person. The entire 400-page standard exists to keep the cardholder\'s card number, expiration date, and security code safe from theft. Every obligation USA has under PCI ultimately traces back to "we handled this person\'s data responsibly." When you read PCI DSS requirements, the unasked question behind every one of them is: "and how does this protect the cardholder?"',
+    future_outlook: 'The cardholder\'s experience is becoming less visible in 2026. Digital wallets (Apple Pay, Google Pay), biometric authentication (fingerprint, face ID), and agentic commerce (AI assistants buying things on your behalf) are all moving the "moment of payment" away from manual card entry. For USA, most cardholders are still students typing a card number into TouchNet, but expect this to shift over the next 3-5 years as Gen Z students increasingly default to wallet-based payments.'
+  },
+  {
+    id: 'poi',
+    name: 'Point of Interaction (POI)',
+    phase: 'both',
+    what_it_does: 'The physical device or digital surface where the card data is first captured. This is the terminal at the Bursar\'s Office counter, the Clover device at the Mitchell Center ticket window, the card reader at the Rec Center, or the TouchNet-hosted payment page on the Admissions website. Wherever a cardholder hands over their card number — physically or digitally — that is the POI.',
+    why_it_exists: 'Card data has to enter the payment system somewhere. The POI is that entry point, and because it is the first place the data exists in digital form, it is also the point of highest compliance sensitivity. Modern POIs are designed to encrypt or tokenize the card data the instant it is captured, so that raw card numbers exist for as short a time and in as few places as possible.',
+    pci_implications: 'The POI is the defining factor in which SAQ questionnaire USA fills out for a given merchant. If the POI is a P2PE-validated hardware terminal (like a BlueFin reader), USA qualifies for SAQ P2PE — the simplest possible questionnaire. If the POI is a TouchNet-hosted iframe, USA qualifies for SAQ A. If the POI is an unencrypted virtual terminal where staff type card numbers into a web form, USA ends up with SAQ C-VT or worse. The POI choice drives the entire compliance posture of the merchant.',
+    future_outlook: 'POIs are getting smarter and more integrated. The physical terminals USA uses today (Clover, BlueFin, standalone card readers) will gradually be replaced by integrated solutions that combine hardware, encryption, and tokenization into single certified devices. For Campus specifically, USA\'s existing P2PE hardware will remain compliant for its useful life — no panicked forced upgrades. But when it is time to replace a device, the replacement will likely be more capable and have a longer compliance runway.'
+  },
+  {
+    id: 'gateway',
+    name: 'Payment Gateway',
+    phase: 'both',
+    what_it_does: 'The gateway receives the authorization request from the merchant (or directly from the POI in some architectures), encrypts and formats it correctly, and routes it to the right payment processor. It then returns the approve/decline response back to the merchant. Think of it as a translator and router between the merchant\'s world and the processor\'s world.',
+    why_it_exists: 'Without a gateway, every merchant would need to build their own direct connection to a payment processor, handle all the encryption and message formatting, and maintain those connections as processors change their technical requirements. Gateways abstract all of that complexity. A merchant integrates once with a gateway, and the gateway handles the messy work of talking to processors on the merchant\'s behalf. For higher ed specifically, gateways like TouchNet also bundle in campus-specific features like student account integration, which is why universities standardize on them.',
+    pci_implications: 'When the gateway captures card data (as with TouchNet Hosted or uStore flows), the merchant\'s own systems never see the raw card number. This is the magic behind SAQ A: if USA never touches the data, USA has dramatically fewer compliance obligations for that flow. The gateway provider takes on most of the PCI burden, and USA just needs to prove that it is using the gateway correctly and that no card data is ever handled by USA infrastructure.',
+    future_outlook: 'Network tokenization is reaching critical mass in 2026. Raw 16-digit card numbers are increasingly replaced with cryptographic tokens that only work within a specific merchant domain. Over the next 3-5 years, gateways will handle fewer raw PANs and more tokens, gradually shrinking the real-world risk profile of the data moving through them. USA does not have direct action to take on this — TouchNet and Fiserv will implement it on the backend — but the net effect is that our flows become safer over time even if our policies do not change.'
+  },
+  {
+    id: 'processor',
+    name: 'Payment Processor',
+    phase: 'both',
+    what_it_does: 'The processor is the company that actually moves the transaction through the card networks on behalf of the acquiring bank. In the authorization phase, the processor receives the request from the gateway, routes it to the correct card network (Visa, Mastercard, Discover, etc.), gets the approve/decline response back, and returns it. In the settlement phase, the processor batches up the day\'s approved transactions and submits them to the networks for clearing and funding.',
+    why_it_exists: 'Acquiring banks do not typically build or operate the technical infrastructure that talks to the card networks in real time — it is specialized, high-volume work that benefits from scale. Instead, acquirers contract with processors who handle it for them. This is exactly the arrangement USA has: Hancock Whitney (acquirer) contracts with Fiserv (processor) to handle the technical plumbing of every Campus transaction.',
+    pci_implications: 'Processors are heavily regulated and certified under PCI DSS themselves — they have to be, because they handle enormous volumes of raw card data for thousands of merchants. For USA, the fact that Fiserv is a top-tier PCI-certified processor is what makes the rest of our compliance architecture workable. If our processor were untrustworthy or uncertified, the entire Campus environment would be at higher risk regardless of what we did on our end.',
+    future_outlook: 'Real-time payment rails are gradually replacing the traditional end-of-day batch settlement model. Mastercard Transaction Stream and similar technologies are rolling out the ability to clear and settle transactions the same day instead of waiting for an overnight batch. For USA, this is not an immediate change — our current flows still use traditional batch settlement — but over the next 3-5 years expect the "settlement phase" in our diagrams to become less clean as transactions settle closer to real-time.'
+  },
+  {
+    id: 'card_network',
+    name: 'Card Network',
+    phase: 'both',
+    what_it_does: 'The card network (Visa, Mastercard, American Express, Discover, etc.) owns the infrastructure that routes authorization and settlement messages between processors and issuing banks. When Fiserv sends an auth request to "Visa" on behalf of USA, Visa\'s network figures out which bank issued the specific card being used and routes the request there, then routes the response back. Networks also set the interchange fees, fraud rules, and technical standards that everyone else has to follow.',
+    why_it_exists: 'Without card networks, every bank would need to maintain direct connections with every other bank in the world, which is mathematically impossible. Networks are the shared infrastructure that lets a card issued by any bank work at any merchant, anywhere, instantly. They exist as neutral intermediaries that make the whole system interoperable.',
+    pci_implications: 'The card networks actually created the PCI DSS standard. The PCI Security Standards Council is jointly governed by Visa, Mastercard, American Express, Discover, and JCB — the networks wrote the rules that everyone else must follow. When USA fills out an SAQ, the ultimate audience is the card networks, because they are the ones who can impose fines or revoke USA\'s ability to accept their cards if USA is non-compliant.',
+    future_outlook: 'The networks are the primary drivers of the 2026 tokenization revolution. Visa has 16 billion active network tokens in circulation and is pushing hard to eliminate raw PANs from the ecosystem entirely. In April 2026, Visa is launching the Digital Commerce Authentication Program (VDCAP), which incentivizes merchants with fee reductions for providing better transaction data. For USA, these network-level changes happen below our layer of visibility — TouchNet and Fiserv handle them on our behalf — but they affect the fee structure and risk profile of our flows over time.'
+  },
+  {
+    id: 'issuing_bank',
+    name: 'Issuing Bank',
+    phase: 'both',
+    what_it_does: 'The issuing bank is the bank that issued the card to the cardholder. When a student at USA taps their Chase Visa, Chase is the issuing bank. The issuing bank\'s job in the authorization phase is to look at the incoming auth request, decide whether the cardholder has enough available credit or funds, check for fraud indicators, and return approve or decline. In the settlement phase, the issuing bank actually pulls the funds from the cardholder\'s account and sends them toward the merchant side of the network.',
+    why_it_exists: 'Someone has to hold the cardholder\'s money and decide whether each transaction is legitimate. Issuing banks are that layer. They also bear the fraud risk on their side of the transaction — if a stolen card is used, the issuing bank usually eats the loss (via chargebacks), which is why issuers invest heavily in fraud detection systems.',
+    pci_implications: 'Issuing banks are not USA\'s problem, directly. USA does not have a relationship with them, does not sign contracts with them, and does not receive their AOCs. But the issuing bank is the entity that ultimately decides whether any given transaction is approved, and the fraud decisions issuers make collectively affect USA\'s authorization rates and the quality of transactions that reach us. When USA sees declines, the issuer is the one saying no.',
+    future_outlook: 'Issuing banks are increasingly relying on AI-driven fraud detection and real-time data to make authorization decisions. They are also key players in the rollout of digital identity wallets and biometric authentication. For USA, the practical effect over the next few years will be fewer false declines and better fraud detection, which means higher authorization rates on legitimate student payments. This is a tailwind we benefit from without having to do anything.'
+  },
+  {
+    id: 'acquiring_bank',
+    name: 'Acquiring Bank',
+    phase: 'both',
+    what_it_does: 'The acquiring bank is the merchant\'s bank — the institution that holds the merchant account and receives the funds when transactions settle. For all 47 USA Campus MIDs, the acquiring bank is Hancock Whitney. The acquirer does almost nothing visible during the authorization phase (that is handled by the processor on the acquirer\'s behalf), but during settlement they receive the funds from the card network and deposit them into USA\'s bank account.',
+    why_it_exists: 'Merchants cannot accept card payments directly — you need a merchant account with a bank that has been approved by the card networks to process transactions. That bank is the acquirer. They take on the liability of ensuring the merchant is legitimate, monitor for fraud and PCI compliance on the merchant\'s side, and own the relationship with the merchant. Without an acquirer, USA could not accept a single card.',
+    pci_implications: 'The acquirer is the entity that actually requires USA to comply with PCI DSS. Hancock Whitney is contractually obligated by the card networks to make sure their merchants (like USA) are PCI compliant, and they pass that obligation down to USA through the merchant agreement. When USA submits an AOC, it goes to Hancock Whitney. When USA is non-compliant, Hancock Whitney is the one who will raise it with us. They are also our escalation point for any processing issue, dispute, or PCI question — not Fiserv directly, because Hancock Whitney owns the relationship.',
+    future_outlook: 'The Hancock Whitney relationship is stable and unlikely to change in the near term. But one thing worth knowing: TouchNet\'s acquisition by Global Payments creates an interesting tension in the Campus payment chain. TouchNet (now Global Payments) is the gateway, routing transactions to Fiserv (the processor under Hancock Whitney). Global Payments and Fiserv are direct competitors in the processor market. This is stable today, but it is the kind of arrangement that could create friction if Global Payments ever pushed TouchNet customers toward their own processing backend. Worth monitoring in vendor conversations.'
+  }
+];
+
+const VENDORS = [
+  {
+    name: 'TouchNet (now owned by Global Payments)',
+    actor_roles: ['gateway'],
+    when_used: 'USA is a TouchNet school. TouchNet is the preferred gateway for nearly all card-not-present payments on Campus. The choice between TouchNet uStore and TouchNet Hosted depends on complexity: uStore is used for simpler scenarios, Hosted is used when a department needs to integrate with specific software through TouchNet Ready partners (like T2 for parking, StarRez for housing, AceWare for continuing ed, and Slate for admissions).',
+    notes: 'TouchNet Ready is a partnership program where third-party software vendors are pre-integrated with TouchNet\'s payment gateway. When a department uses one of these partners, TouchNet handles the payment processing while the partner software handles department-specific workflow.',
+    future_outlook: 'TouchNet was acquired by Global Payments and is no longer an independent higher-ed-specific company — it is now a product line inside one of the world\'s largest payment processors. Global Payments is a direct competitor to Fiserv, so USA\'s payment chain now has two competing payment giants in it. Stable today but worth monitoring.'
+  },
+  {
+    name: 'Clover',
+    actor_roles: ['poi', 'gateway'],
+    when_used: 'Clover terminals are used for card-present transactions at specific Campus merchants: Bursar HH, Athletic Business Office, EMS Education, Music Department, Jaguar Marching Band, and Kinesiology.',
+    notes: 'Clover is a Fiserv subsidiary — the hardware and the payment backend are both under the Fiserv umbrella. Clover devices use TransArmor P2PE, which encrypts card data at the moment of capture inside the device hardware.',
+    future_outlook: 'Clover hardware will continue to receive Fiserv updates and remain compliant for the useful life of the devices. No forced upgrades expected.'
+  },
+  {
+    name: 'BlueFin',
+    actor_roles: ['poi'],
+    when_used: 'BlueFin P2PE hardware readers are used when a Campus department needs card-present capability but wants to route through the TouchNet gateway. This applies to Bursar Office, Housing, and Continuing Education.',
+    notes: 'BlueFin is a PCI-validated P2PE solution, which is a stricter standard than "just" E2EE. P2PE validation means the PCI Security Standards Council itself has certified the encryption.',
+    future_outlook: 'BlueFin hardware is stable. USA is in the middle of deploying Bluefin SREDKey2 devices for the Blackbaud Raiser\'s Edge NXT flow, which is the final step to retire the PCI firewall.'
+  },
+  {
+    name: 'CyberSource / Paciolan',
+    actor_roles: ['gateway'],
+    when_used: 'Used specifically for Athletics ticketing: USA Athletics eVenue and USA Athletics Department MIDs. Paciolan is the ticketing software, CyberSource is the gateway underneath it.',
+    notes: 'One of the few non-TouchNet gateway flows on Campus. Exists because Paciolan is the specialized ticketing platform Athletics uses, and Paciolan integrates with CyberSource rather than TouchNet.',
+    future_outlook: 'No announced changes. This is a legacy integration that works.'
+  },
+  {
+    name: 'Authorize.net',
+    actor_roles: ['gateway'],
+    when_used: 'Used for two specific Campus MIDs: USA Development Registration (integrated with Classy) and USA MCOB Special Events (integrated with JotForm). Both are card-not-present flows.',
+    notes: 'These are exceptions to the TouchNet-first policy. They exist because the integration partners (Classy and JotForm) ship with Authorize.net integration out of the box.',
+    future_outlook: 'Stable. No known migration plans.'
+  },
+  {
+    name: 'GoVolution',
+    actor_roles: ['gateway'],
+    when_used: 'Used only for the USA Athletics Parking MID. The single GoVolution flow on Campus and the only SAQ B-IP flow.',
+    notes: 'A one-off legacy integration.',
+    future_outlook: 'Worth reviewing during the next annual cycle to determine whether this flow should be migrated to a more standard architecture.'
+  },
+  {
+    name: 'Fiserv',
+    actor_roles: ['processor'],
+    when_used: 'Fiserv is the payment processor for every Campus MID, without exception. Every transaction on Campus eventually routes through Fiserv to reach the card networks.',
+    notes: 'Critical institutional knowledge: Hancock Whitney owns the merchant services relationship with USA. Fiserv is the backend processor that Hancock Whitney uses. USA does not have a direct contract with Fiserv. When you need to escalate a processing issue, your call goes to Hancock Whitney, not Fiserv directly.',
+    future_outlook: 'Fiserv remains the dominant payment processor in higher ed and is stable as a vendor. Watch the long-term TouchNet/Global Payments competitive dynamic.'
+  },
+  {
+    name: 'Hancock Whitney',
+    actor_roles: ['acquiring_bank'],
+    when_used: 'Hancock Whitney is the acquiring bank of record for all 47 USA Campus MIDs. Every Campus transaction ultimately settles into a Hancock Whitney account.',
+    notes: 'Hancock Whitney owns the full merchant services relationship for Campus. They are the point of contact for any processing issue, any PCI question, any dispute, any merchant account change, and any reporting access request. USA\'s AOCs are submitted to Hancock Whitney.',
+    future_outlook: 'The Hancock Whitney relationship is stable. As a regional bank, they provide a level of personal attention that larger national acquirers often do not, which is valuable for a public university.'
+  },
+  {
+    name: 'Visa / Mastercard / Discover / American Express',
+    actor_roles: ['card_network'],
+    when_used: 'All four major card networks are accepted across Campus MIDs. Visa and Mastercard dominate volume.',
+    notes: 'The card networks are the authors of the PCI DSS standard itself. They are the ultimate regulatory authority behind all of USA\'s PCI obligations.',
+    future_outlook: 'In April 2026, Visa is launching the Digital Commerce Authentication Program (VDCAP), incentivizing merchants with fee reductions for providing better transaction data.'
+  }
+];
+
+// ============================================================
+// PAYMENT SETUPS — each declares which actors are active
+// and what vendor name appears in each active actor box
+// ============================================================
+
+const SETUPS = [
+  {
+    id: 'CAMPUS-TRANSARMOR-E2EE',
+    name: 'Campus · TransArmor E2EE',
+    short_name: 'TransArmor E2EE',
+    saq_type: 'SAQ P2PE',
+    mid_count: '15 MIDs',
+    description: 'Used at Main Library, Post Office, Psych Clinic, Mitchell Center ticket office, Parking, and other standalone-terminal locations across Campus. Someone walks up with a card, a staff member runs it on a physical terminal, and the terminal talks directly to Fiserv. There is no separate gateway in the middle, no hosted payment page, no e-commerce flow. The physical device is the entire payment stack from USA\'s perspective.',
+    vendor_stack: 'Standalone terminal with TransArmor E2EE → Fiserv (backend for Hancock Whitney) → Hancock Whitney (acquirer)',
+    notable_quirks: 'The terminal encrypts card data the instant it is read, using Fiserv\'s TransArmor technology. The encryption happens inside the hardware before the data ever touches a wire or a USA computer. This means USA\'s network never sees the actual card number — only an encrypted blob that only Fiserv can decrypt. USA is the Merchant of Record for all of these flows.',
+    future_outlook: 'Stable architecture with no forced upgrades expected. The reason this is the simplest possible architecture from a compliance standpoint: if our network never sees card data, our network does not need to be protected against card data theft. The compliance obligation collapses down to "make sure nobody tampers with the physical terminal," which is what SAQ P2PE is all about.',
+    // Actor mapping: which actors are present, and which vendor fills each role
+    // gateway is "skipped" in this architecture - the terminal talks directly to processor
+    actor_map: {
+      cardholder: { state: 'lit', vendor: 'Anyone paying' },
+      poi: { state: 'lit', vendor: 'Standalone terminal w/ TransArmor E2EE' },
+      gateway: { state: 'skipped', vendor: '(no gateway — terminal talks direct to processor)' },
+      processor: { state: 'lit', vendor: 'Fiserv' },
+      card_network: { state: 'lit', vendor: 'Visa / MC / Disc / Amex' },
+      issuing_bank: { state: 'lit', vendor: 'Cardholder\'s bank' },
+      acquiring_bank: { state: 'lit', vendor: 'Hancock Whitney' }
+    }
+  },
+  {
+    id: 'CAMPUS-TOUCHNET-HOSTED',
+    name: 'Campus · TouchNet Hosted',
+    short_name: 'TouchNet Hosted',
+    saq_type: 'SAQ A',
+    mid_count: '9 MIDs',
+    description: 'Card-not-present web payment flow used when a department needs to integrate with specific software (StarRez housing, Slate admissions, T2 parking, AceWare continuing ed) while still processing through TouchNet. The student interacts with the department-specific software, which hands off the actual card entry to a TouchNet-hosted iframe. USA\'s systems never touch the card number directly.',
+    vendor_stack: 'Department software (TouchNet Ready partner) → TouchNet gateway → Fiserv → Hancock Whitney',
+    notable_quirks: 'USA is the Merchant of Record for these flows. The department software is the visible interface to the student, but all actual card handling happens inside the TouchNet iframe, which is what keeps these flows on the simplest PCI scope (SAQ A). Used for complex scenarios where uStore\'s generic storefront does not fit department needs.',
+    future_outlook: 'PCI DSS v4.0 requirements that became mandatory in March 2025 directly affect iframe-based flows. Requirement 6.4.3 requires inventory and authorization of every script on payment pages. Requirement 11.6.1 requires tamper and change detection with alerts. These are primarily TouchNet\'s responsibility on USA\'s behalf. Good question to raise with CampusGuard.',
+    actor_map: {
+      cardholder: { state: 'lit', vendor: 'Student / parent / customer' },
+      poi: { state: 'lit', vendor: 'TouchNet-hosted iframe' },
+      gateway: { state: 'lit', vendor: 'TouchNet (Global Payments)' },
+      processor: { state: 'lit', vendor: 'Fiserv' },
+      card_network: { state: 'lit', vendor: 'Visa / MC / Disc / Amex' },
+      issuing_bank: { state: 'lit', vendor: 'Cardholder\'s bank' },
+      acquiring_bank: { state: 'lit', vendor: 'Hancock Whitney' }
+    }
+  },
+  {
+    id: 'CAMPUS-TOUCHNET-USTORE',
+    name: 'Campus · TouchNet uStore',
+    short_name: 'TouchNet uStore',
+    saq_type: 'SAQ A',
+    mid_count: '10 MIDs',
+    description: 'Card-not-present flow for simpler scenarios where a department needs to sell something without complex integration. Used by the Online Store, Allied Health, Career Services, College of Engineering, College of Medicine, Marching Band, Nursing, HCM Payroll Insurance, Simulation Program, and Music Department uStores.',
+    vendor_stack: 'TouchNet uStore catalog → TouchNet gateway → Fiserv → Hancock Whitney',
+    notable_quirks: 'Architecturally nearly identical to TouchNet Hosted, but using TouchNet\'s branded uStore product rather than integrating with separate department-specific software. The uStore is essentially a pre-built e-commerce platform for campus departments.',
+    future_outlook: 'Same v4.0 considerations as TouchNet Hosted. No uStore-specific changes known.',
+    actor_map: {
+      cardholder: { state: 'lit', vendor: 'Student / parent / customer' },
+      poi: { state: 'lit', vendor: 'TouchNet uStore catalog' },
+      gateway: { state: 'lit', vendor: 'TouchNet (Global Payments)' },
+      processor: { state: 'lit', vendor: 'Fiserv' },
+      card_network: { state: 'lit', vendor: 'Visa / MC / Disc / Amex' },
+      issuing_bank: { state: 'lit', vendor: 'Cardholder\'s bank' },
+      acquiring_bank: { state: 'lit', vendor: 'Hancock Whitney' }
+    }
+  },
+  {
+    id: 'CAMPUS-CLOVER-P2PE',
+    name: 'Campus · Clover P2PE',
+    short_name: 'Clover P2PE',
+    saq_type: 'SAQ P2PE',
+    mid_count: '6 MIDs',
+    description: 'Card-present architecture using Clover devices, at Bursar HH, Athletic Business Office, EMS Education, Music Department, Jaguar Marching Band, and Kinesiology. Cardholders tap, dip, or swipe a physical card on a Clover terminal, which encrypts the data immediately using TransArmor P2PE and sends it to Fiserv for processing.',
+    vendor_stack: 'Clover terminal (TransArmor P2PE) → Clover platform → Fiserv → Hancock Whitney',
+    notable_quirks: 'Clover is a Fiserv subsidiary, so the entire flow from POI through processing is under the Fiserv umbrella — unusual compared to other setups where the gateway and processor are different companies.',
+    future_outlook: 'Clover hardware will continue to receive Fiserv updates. No forced changes expected.',
+    actor_map: {
+      cardholder: { state: 'lit', vendor: 'In-person customer' },
+      poi: { state: 'lit', vendor: 'Clover terminal (P2PE)' },
+      gateway: { state: 'lit', vendor: 'Clover platform (Fiserv)' },
+      processor: { state: 'lit', vendor: 'Fiserv' },
+      card_network: { state: 'lit', vendor: 'Visa / MC / Disc / Amex' },
+      issuing_bank: { state: 'lit', vendor: 'Cardholder\'s bank' },
+      acquiring_bank: { state: 'lit', vendor: 'Hancock Whitney' }
+    }
+  },
+  {
+    id: 'CAMPUS-TOUCHNET-BLUEFIN-P2PE',
+    name: 'Campus · TouchNet + BlueFin P2PE',
+    short_name: 'TouchNet + BlueFin',
+    saq_type: 'SAQ P2PE',
+    mid_count: '3 MIDs',
+    description: 'Hybrid card-present architecture used at the Bursar Office, Housing, and Continuing Education. Cardholders swipe or dip a physical card on a BlueFin hardware reader, which encrypts the data at the read head before it ever enters USA\'s computers. The encrypted data then routes through the TouchNet gateway to Fiserv.',
+    vendor_stack: 'BlueFin P2PE encrypting reader → TouchNet gateway → Fiserv → Hancock Whitney',
+    notable_quirks: 'The only Campus setup that combines a physical P2PE reader with the TouchNet gateway. Exists for departments that need card-present capability but want to maintain TouchNet integration for reporting and reconciliation. BlueFin is PCI-validated P2PE (not just E2EE).',
+    future_outlook: 'USA is actively deploying BlueFin SREDKey2 devices for the Blackbaud Raiser\'s Edge NXT flow (Development/Alumni). This is the final step needed to retire the PCI firewall.',
+    actor_map: {
+      cardholder: { state: 'lit', vendor: 'In-person customer' },
+      poi: { state: 'lit', vendor: 'BlueFin P2PE reader' },
+      gateway: { state: 'lit', vendor: 'TouchNet (Global Payments)' },
+      processor: { state: 'lit', vendor: 'Fiserv' },
+      card_network: { state: 'lit', vendor: 'Visa / MC / Disc / Amex' },
+      issuing_bank: { state: 'lit', vendor: 'Cardholder\'s bank' },
+      acquiring_bank: { state: 'lit', vendor: 'Hancock Whitney' }
+    }
+  },
+  {
+    id: 'CAMPUS-CYBERSOURCE-PACIOLAN',
+    name: 'Campus · CyberSource / Paciolan (Athletics)',
+    short_name: 'CyberSource / Paciolan',
+    saq_type: 'SAQ A / P2PE',
+    mid_count: '2 MIDs',
+    description: 'The Athletics ticketing flow used for USA Athletics eVenue and USA Athletics Department MIDs. Customers buy tickets through Paciolan (the specialized ticketing software), which hands off card capture to CyberSource (the gateway). Includes BlueFin P2PE hardware for in-person ticket sales.',
+    vendor_stack: 'Paciolan ticketing + BlueFin P2PE (for card-present) → CyberSource gateway → Fiserv → Hancock Whitney',
+    notable_quirks: 'One of the few non-TouchNet gateway flows on Campus. Paciolan ships with CyberSource integration out of the box, which is why this is not a TouchNet flow.',
+    future_outlook: 'Stable. No announced migration plans.',
+    actor_map: {
+      cardholder: { state: 'lit', vendor: 'Ticket buyer' },
+      poi: { state: 'lit', vendor: 'Paciolan + BlueFin P2PE' },
+      gateway: { state: 'lit', vendor: 'CyberSource' },
+      processor: { state: 'lit', vendor: 'Fiserv' },
+      card_network: { state: 'lit', vendor: 'Visa / MC / Disc / Amex' },
+      issuing_bank: { state: 'lit', vendor: 'Cardholder\'s bank' },
+      acquiring_bank: { state: 'lit', vendor: 'Hancock Whitney' }
+    }
+  },
+  {
+    id: 'CAMPUS-AUTHNET',
+    name: 'Campus · Authorize.net',
+    short_name: 'Authorize.net',
+    saq_type: 'SAQ A',
+    mid_count: '2 MIDs',
+    description: 'Card-not-present flow used for USA Development Registration (integrated with Classy for donations) and USA MCOB Special Events (integrated with JotForm). Cardholders enter card data through an Authorize.net-hosted surface embedded in the integration partner\'s software.',
+    vendor_stack: 'Classy or JotForm → Authorize.net gateway → Fiserv → Hancock Whitney',
+    notable_quirks: 'One of the few exceptions to the TouchNet-first policy on Campus. These flows exist because Classy and JotForm ship with Authorize.net integration out of the box.',
+    future_outlook: 'Stable. Candidate for consolidation if volume grows or if Classy/JotForm add TouchNet support.',
+    actor_map: {
+      cardholder: { state: 'lit', vendor: 'Donor / event registrant' },
+      poi: { state: 'lit', vendor: 'Classy or JotForm form' },
+      gateway: { state: 'lit', vendor: 'Authorize.net' },
+      processor: { state: 'lit', vendor: 'Fiserv' },
+      card_network: { state: 'lit', vendor: 'Visa / MC / Disc / Amex' },
+      issuing_bank: { state: 'lit', vendor: 'Cardholder\'s bank' },
+      acquiring_bank: { state: 'lit', vendor: 'Hancock Whitney' }
+    }
+  },
+  {
+    id: 'CAMPUS-GOVOLUTION',
+    name: 'Campus · GoVolution (Athletics Parking)',
+    short_name: 'GoVolution',
+    saq_type: 'SAQ B-IP',
+    mid_count: '1 MID',
+    description: 'A single legacy integration for USA Athletics Parking. Uses an IP-connected POI terminal that routes through the GoVolution gateway. This is the only SAQ B-IP flow on Campus.',
+    vendor_stack: 'IP-connected terminal → GoVolution gateway → Fiserv → Hancock Whitney',
+    notable_quirks: 'The single most unusual Campus flow. SAQ B-IP is a specific questionnaire type for merchants with IP-connected payment terminals and no e-commerce.',
+    future_outlook: 'Review recommended. This flow should probably be migrated to a more standard Campus architecture (likely TouchNet + BlueFin) the next time the underlying parking system is upgraded.',
+    actor_map: {
+      cardholder: { state: 'lit', vendor: 'Parking customer' },
+      poi: { state: 'lit', vendor: 'IP-connected terminal' },
+      gateway: { state: 'lit', vendor: 'GoVolution' },
+      processor: { state: 'lit', vendor: 'Fiserv' },
+      card_network: { state: 'lit', vendor: 'Visa / MC / Disc / Amex' },
+      issuing_bank: { state: 'lit', vendor: 'Cardholder\'s bank' },
+      acquiring_bank: { state: 'lit', vendor: 'Hancock Whitney' }
+    }
+  }
+];
+
+const GLOSSARY = [
+  { term: 'AOC (Attestation of Compliance)', definition: 'The formal document USA submits to Hancock Whitney each year attesting that we meet PCI DSS requirements for a given merchant. An AOC accompanies a completed SAQ.', related: 'SAQ, QSA' },
+  { term: 'Acquirer / Acquiring Bank', definition: 'The bank that holds the merchant account and receives settled funds. For all 47 USA Campus MIDs, this is Hancock Whitney.', related: 'MID, Processor' },
+  { term: 'CampusGuard', definition: 'USA\'s Qualified Security Assessor (QSA). They perform our annual gap reviews, provide guidance on PCI scope decisions, and help interpret requirements for higher-ed specifically.', related: 'QSA, AOC' },
+  { term: 'Cardholder Data Environment (CDE)', definition: 'The systems, networks, and people that touch cardholder data. Anything inside the CDE is "in scope" for PCI DSS and must meet compliance requirements. Architectural decisions like using P2PE or hosted iframes are designed to shrink the CDE.', related: 'P2PE, SAQ' },
+  { term: 'E2EE (End-to-End Encryption)', definition: 'Card data is encrypted from the point of capture through to the processor. Weaker than P2PE because it lacks PCI SSC validation, but functionally similar. Fiserv\'s TransArmor is E2EE that is "treated as P2PE" for compliance purposes.', related: 'P2PE, TransArmor' },
+  { term: 'Fiserv', definition: 'The payment processor that handles transaction routing and settlement for all Campus MIDs. Fiserv is the backend for USA\'s merchant services relationship with Hancock Whitney — USA does not have a direct contract with Fiserv.', related: 'Processor, Hancock Whitney' },
+  { term: 'Gateway', definition: 'The software layer that receives authorization requests from merchants and routes them to the right processor. USA standardizes on TouchNet as the preferred gateway for card-not-present flows.', related: 'TouchNet, Processor' },
+  { term: 'Hancock Whitney', definition: 'USA\'s acquiring bank for all Campus MIDs. Hancock Whitney owns the merchant services relationship, receives settled funds, and is the primary escalation point for any PCI, processing, or dispute issue.', related: 'Acquirer, Fiserv' },
+  { term: 'Interchange', definition: 'The fee paid by the acquirer to the issuer for each transaction. Set by the card networks. USA ultimately pays interchange indirectly through Hancock Whitney\'s fee structure.', related: 'Card Network' },
+  { term: 'Issuer / Issuing Bank', definition: 'The bank that issued the card to the cardholder. When a student taps a Chase Visa, Chase is the issuer. Issuers decide whether to approve or decline each transaction.', related: 'Cardholder, Card Network' },
+  { term: 'MID (Merchant ID)', definition: 'A unique identifier assigned to each merchant account. USA Campus has 47 MIDs, each representing a specific department or payment channel. Each MID has its own PCI scope and SAQ.', related: 'SAQ, MOR' },
+  { term: 'MOR (Merchant of Record)', definition: 'The entity that holds the merchant agreement and bears the PCI compliance obligation. USA is the MOR for all 47 Campus MIDs. For some partnerships (especially on the Health side), USA is not the MOR and instead obtains AOCs from the third party annually.', related: 'AOC, MID' },
+  { term: 'P2PE (Point-to-Point Encryption)', definition: 'A PCI-validated encryption method where card data is encrypted at the point of capture (the hardware terminal) before it ever enters the merchant\'s network. P2PE-validated flows qualify for the simplest PCI questionnaire (SAQ P2PE) because the merchant\'s systems never see raw card data.', related: 'E2EE, SAQ' },
+  { term: 'PAN (Primary Account Number)', definition: 'The 16-digit number printed on the front of a credit card. This is the most sensitive piece of data under PCI DSS. Network tokenization is gradually replacing raw PANs with cryptographic tokens in modern payment flows.', related: 'Tokenization' },
+  { term: 'Payment Setup', definition: 'A specific configuration of vendors, devices, and methods deployed for a particular USA payment situation. USA Campus has 8 distinct payment setups, each represented as a chip in the Transaction Flow tab. Internally referred to as an "archetype" in compliance documentation.', related: 'MID, SAQ' },
+  { term: 'PCI DSS', definition: 'Payment Card Industry Data Security Standard. The set of security requirements all merchants must meet to accept card payments. Current version is v4.0.1, with future-dated requirements mandatory as of March 31, 2025.', related: 'SAQ, QSA' },
+  { term: 'POI (Point of Interaction)', definition: 'The physical device or digital surface where card data is first captured. PCI SSC\'s formal term for "terminal or payment page." The POI determines which SAQ applies to a given flow.', related: 'SAQ, P2PE' },
+  { term: 'Processor', definition: 'The company that handles the technical routing of transactions between the gateway and the card networks. Fiserv is USA\'s processor.', related: 'Gateway, Acquirer' },
+  { term: 'QSA (Qualified Security Assessor)', definition: 'A PCI-certified auditor. USA uses CampusGuard as our QSA. They perform annual gap reviews and help determine scope for each merchant.', related: 'CampusGuard, AOC' },
+  { term: 'SAQ (Self-Assessment Questionnaire)', definition: 'The questionnaire merchants fill out annually to attest to PCI compliance. Different SAQ types apply to different architectures: SAQ A for hosted web payments, SAQ P2PE for validated hardware encryption, SAQ C-VT for virtual terminals, SAQ D for everything else. Simpler SAQs mean less compliance work.', related: 'AOC, POI' },
+  { term: 'SAQ A', definition: 'The simplest PCI questionnaire, for merchants who outsource all card handling to a compliant third party (like TouchNet hosted payments). USA\'s TouchNet Hosted and uStore flows qualify for SAQ A.', related: 'SAQ, Gateway' },
+  { term: 'SAQ P2PE', definition: 'The questionnaire for merchants using PCI-validated P2PE hardware. Similar simplicity to SAQ A but for physical card-present flows. USA\'s Clover, BlueFin, and TransArmor standalone terminal flows qualify for SAQ P2PE.', related: 'P2PE, SAQ' },
+  { term: 'Tokenization', definition: 'The process of replacing a card number with a cryptographic token that only works in a specific context (specific merchant, specific device, etc.). Network tokenization is rapidly expanding in 2026 and will eventually reduce the real-world sensitivity of card data flowing through payment systems.', related: 'PAN, P2PE' },
+  { term: 'TouchNet', definition: 'USA\'s preferred payment gateway for Campus card-not-present flows. TouchNet was acquired by Global Payments and is no longer an independent higher-ed-focused company. USA is considered a "TouchNet school."', related: 'Gateway, TouchNet Ready' },
+  { term: 'TouchNet Ready', definition: 'A partnership program where third-party software vendors (like T2 for parking, StarRez for housing, AceWare for continuing ed, Slate for admissions) are pre-integrated with TouchNet\'s payment gateway. Allows USA to use specialized department software without compromising PCI scope.', related: 'TouchNet, Gateway' },
+  { term: 'TransArmor', definition: 'Fiserv\'s E2EE solution for standalone terminals. Treated as P2PE for compliance purposes even though it is technically E2EE. Used on 15 of USA\'s 47 Campus MIDs.', related: 'E2EE, P2PE, Fiserv' }
+];
+
+const CONTEXT = [
+  {
+    topic: 'PCI DSS v4.0.1 and the 2026 Compliance Cycle',
+    explanation: 'USA is currently operating under PCI DSS v4.0.1, released by the PCI Security Standards Council in June 2024. The "future-dated" requirements from v4.0 became mandatory on March 31, 2025. As of 2026, there is no announced v5.0 — the Council is in a stabilization period focused on FAQs and clarifications rather than new versions.\n\nWhat this means for USA specifically: 2026 is the first full compliance cycle under mandatory v4.0 controls. CampusGuard will increasingly expect 12 months of evidence that our controls have been operating continuously, not just documentation that we are set up for them. This shifts the annual review conversation from "are you configured correctly" to "show me the logs proving it has been working all year."'
+  },
+  {
+    topic: 'Three v4.0 Changes That Affect USA Most',
+    explanation: 'Three mandatory PCI DSS v4.0 requirements directly affect USA\'s Campus environment.\n\nRequirement 6.4.3 requires inventory and authorization of every script running on payment pages. This matters because USA\'s TouchNet flows involve iframes embedded in USA-hosted pages, and any scripts on those pages need to be inventoried.\n\nRequirement 11.6.1 requires tamper and change detection with alerts on payment pages. Same TouchNet iframe relevance.\n\nRequirement 8 expands multi-factor authentication to cover all access to the Cardholder Data Environment, not just admin accounts.\n\nFor the first two, confirm with TouchNet that they are handling these obligations for the iframe content, and make sure our AOC reflects this. For the third, coordinate with Louis Wright and the Information Security team to confirm MFA coverage across every system that touches the CDE.'
+  },
+  {
+    topic: 'USA\'s Merchant of Record Posture',
+    explanation: 'USA is the Merchant of Record for all 47 Campus MIDs. This means USA\'s EIN is on the merchant agreement, USA bears the PCI compliance obligation, and USA signs the Attestation of Compliance (AOC).\n\nIn addition, USA partners with several third parties where the third party is the MOR. In those cases, the third party holds their own merchant agreement, bears their own compliance obligation, and provides USA with their AOC annually as proof. USA\'s job in non-MOR relationships is to obtain and review the third party\'s AOC annually, not to attest to PCI compliance for that payment flow directly.\n\nThis distinction is easy to get wrong and has real consequences. Confusing the two leads to either duplicative work (attesting to compliance you do not own) or dangerous gaps (assuming a third party is PCI compliant without verifying their AOC). Every partnership that touches card data needs to be explicitly categorized as MOR or non-MOR, with the appropriate documentation on file.'
+  },
+  {
+    topic: 'USA is a "TouchNet School"',
+    explanation: 'USA has made a strategic decision to standardize on TouchNet as the preferred gateway for Campus payment flows. This institutional identity shapes every new merchant onboarding: when a department comes to Treasury wanting to accept payments, the first question is not "what do you need" — it is "TouchNet Hosted or uStore?"\n\nThe decision tree is clear. Card-present flows use BlueFin P2PE hardware routed through TouchNet. Card-not-present simple scenarios use TouchNet uStore. Card-not-present complex scenarios (integrating with department-specific software through TouchNet Ready partners like T2, StarRez, AceWare, and Slate) use TouchNet Hosted.\n\nThe exceptions to the TouchNet-first philosophy (CyberSource/Paciolan for Athletics ticketing, Authorize.net for Development Registration and MCOB Special Events, GoVolution for Athletics Parking) exist for legacy or integration-specific reasons, not because TouchNet was ruled out. Any new merchant that does not fit the TouchNet model should be flagged as an exception requiring justification.'
+  },
+  {
+    topic: 'Network Tokenization Reaching Critical Mass',
+    explanation: 'As of 2026, network tokenization is rapidly replacing raw Primary Account Numbers (PANs) in transaction flows. Visa reports 16 billion active tokens in circulation. Mastercard and Worldline announced a 10-year partnership in September 2025 to deploy tokenized credentials across 1.4 million European POS terminals by Q2 2026, which they estimate will reduce card-present fraud by 67 percent. Juniper Research forecasts global network tokenized transactions will nearly double from approximately 283 billion in 2025 to about 574 billion by 2029.\n\nThe practical effect: the "card data" flowing through payment systems is increasingly not card data at all — it is cryptographic tokens that are intrinsically less sensitive. For USA, this does not require direct action from us. TouchNet, Fiserv, and the card networks are implementing tokenization on the backend. But the net effect is that our existing flows become safer over time even if our policies do not change. Tokenization is a tailwind we benefit from passively.'
+  },
+  {
+    topic: 'The TouchNet/Global Payments/Fiserv Dynamic',
+    explanation: 'TouchNet was acquired by Global Payments, one of the world\'s largest payment processors. This means TouchNet is no longer an independent higher-ed-specific company — it is a product line inside Global Payments\' broader portfolio.\n\nHere is the interesting part: Global Payments is a direct competitor to Fiserv in the processor market. USA\'s Campus payment chain now has two competing payment giants in it — TouchNet (Global Payments) as the gateway, routing to Fiserv as the processor under Hancock Whitney.\n\nThis is stable today. Neither Global Payments nor Fiserv has any immediate incentive to disrupt the arrangement. But it is the kind of architectural dynamic that could create friction over the long term if Global Payments ever decided to push TouchNet customers toward their own processing backend. Worth having on Drew\'s radar during annual vendor relationship reviews, without treating it as an immediate concern.'
+  },
+  {
+    topic: 'Why the Acquirer Is "Invisible" During Authorization',
+    explanation: 'One of the most confusing aspects of the reference model is that the Acquiring Bank (Hancock Whitney) does almost nothing during the authorization phase of a transaction. When a student taps a card at the Bursar\'s Office, the auth request flows from the terminal through TouchNet to Fiserv to Visa to the issuing bank and back — Hancock Whitney is not involved in real-time.\n\nThe reason: Hancock Whitney has delegated its role in authorization to Fiserv. Fiserv acts on Hancock Whitney\'s behalf as the real-time operational layer. Hancock Whitney\'s role shows up during the settlement phase — hours later, usually at end of day — when Fiserv submits the day\'s batch of approved transactions for clearing. That is when funds actually move from card issuers to card networks to Hancock Whitney to USA\'s bank account.\n\nThis is why Hancock Whitney is USA\'s point of contact for compliance and relationship issues (they own the contract), but Fiserv is where the actual transaction technology lives. Two different roles, both necessary.'
+  },
+  {
+    topic: 'PCI DSS Requirement 1.2.4 — What Drew Noticed',
+    explanation: 'PCI DSS v4.0.1 Requirement 1.2.4 explicitly mandates that merchants maintain accurate cardholder data flow diagrams showing how card data enters, moves through, and exits the environment. This includes origin, destination, transmission method (cleartext vs encrypted), and the systems and individuals that handle the data at each stage. The diagrams must be reviewed at least annually and updated after every significant infrastructure change.\n\nDrew\'s feedback on the first USA draw.io diagram noted that flow charts are a requirement he had stopped maintaining due to workload. The draw.io archetype diagrams Ryan built (8 total for Campus, with Health in progress) collectively satisfy Requirement 1.2.4 for the first time in USA\'s recent history. This is a concrete compliance gap that has been closed — worth naming explicitly in the annual review and in performance conversations, because "brought USA back into compliance with 1.2.4" is a real accomplishment, not a nice-to-have.'
+  }
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let currentMode = 'universal';  // 'universal' or a setup id
+let currentSelection = null;     // currently-selected actor id (in any mode)
+
+// ============================================================
+// HELPERS
+// ============================================================
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function paragraphs(text) {
+  return text.split('\n\n').map(p => `<p>${escapeHtml(p)}</p>`).join('');
+}
+
+// ============================================================
+// RENDER: actors row (re-rendered when mode changes)
+// ============================================================
+function renderActors() {
+  const container = document.getElementById('actors-row');
+  container.innerHTML = ACTORS.map((actor, idx) => {
+    let stateClass = '';
+    let vendorHtml = '';
+
+    if (currentMode === 'universal') {
+      // All actors in default state, no vendor labels
+      vendorHtml = '<div class="actor-vendor"></div>';
+    } else {
+      // Setup mode - apply per-actor state from setup's actor_map
+      const setup = SETUPS.find(s => s.id === currentMode);
+      if (setup && setup.actor_map[actor.id]) {
+        const mapping = setup.actor_map[actor.id];
+        stateClass = ' ' + mapping.state;
+        vendorHtml = `<div class="actor-vendor">${escapeHtml(mapping.vendor)}</div>`;
+      }
+    }
+
+    if (currentSelection === actor.id) {
+      stateClass += ' active';
+    }
+
+    return `
+      <div class="actor${stateClass}" data-actor-id="${actor.id}" onclick="onActorClick('${actor.id}')">
+        <div class="actor-number">Step ${idx + 1}</div>
+        <div class="actor-name">${escapeHtml(actor.name)}</div>
+        <div class="actor-phase">${actor.phase}</div>
+        ${vendorHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// RENDER: setup selector chips
+// ============================================================
+function renderSelector() {
+  const container = document.getElementById('selector-chips');
+  const universalChip = `<button class="chip universal${currentMode === 'universal' ? ' active' : ''}" onclick="selectMode('universal')">Universal Flow</button>`;
+  const setupChips = SETUPS.map(setup =>
+    `<button class="chip${currentMode === setup.id ? ' active' : ''}" onclick="selectMode('${setup.id}')">${escapeHtml(setup.short_name)}</button>`
+  ).join('');
+  container.innerHTML = universalChip + setupChips;
+}
+
+// ============================================================
+// MODE SELECTION
+// ============================================================
+function selectMode(modeId) {
+  currentMode = modeId;
+  currentSelection = null;
+  renderActors();
+  renderSelector();
+
+  if (modeId === 'universal') {
+    // Show empty state hint
+    const panel = document.getElementById('detail-panel');
+    panel.classList.add('empty');
+    panel.innerHTML = 'Click any actor in the flow above to learn what it does, why it exists, and which USA vendors play that role.';
+  } else {
+    // Show the setup detail
+    renderSetupDetail(modeId);
+  }
+}
+
+// ============================================================
+// ACTOR CLICK HANDLER
+// ============================================================
+function onActorClick(actorId) {
+  // In setup mode, ignore clicks on dimmed/skipped actors
+  if (currentMode !== 'universal') {
+    const setup = SETUPS.find(s => s.id === currentMode);
+    if (setup && setup.actor_map[actorId]) {
+      const state = setup.actor_map[actorId].state;
+      if (state === 'dimmed' || state === 'skipped') {
+        // Just show the skipped/dimmed explanation
+        renderActorInSetup(actorId, true);
+        currentSelection = actorId;
+        renderActors();
+        return;
+      }
+    }
+  }
+
+  currentSelection = actorId;
+  renderActors();
+
+  if (currentMode === 'universal') {
+    renderActorUniversal(actorId);
+  } else {
+    renderActorInSetup(actorId, false);
+  }
+}
+
+// ============================================================
+// RENDER: actor detail in universal mode
+// ============================================================
+function renderActorUniversal(actorId) {
+  const actor = ACTORS.find(a => a.id === actorId);
+  if (!actor) return;
+
+  const vendors = VENDORS.filter(v => v.actor_roles.includes(actorId));
+
+  const panel = document.getElementById('detail-panel');
+  panel.classList.remove('empty');
+
+  panel.innerHTML = `
+    <div class="detail-header">
+      <h3 class="detail-title">${escapeHtml(actor.name)}</h3>
+      <span class="detail-badge">Universal view</span>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">What it does</div>
+      <div class="detail-content">${paragraphs(actor.what_it_does)}</div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Why it exists</div>
+      <div class="detail-content">${paragraphs(actor.why_it_exists)}</div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">PCI implications</div>
+      <div class="detail-content">${paragraphs(actor.pci_implications)}</div>
+    </div>
+
+    ${vendors.length > 0 ? `
+    <div class="detail-section">
+      <div class="detail-label">USA vendors in this role</div>
+      <div class="vendor-list">
+        ${vendors.map(v => `
+          <div class="vendor-item">
+            <div class="vendor-name">${escapeHtml(v.name)}</div>
+            <div class="vendor-field"><strong>When used</strong>${escapeHtml(v.when_used)}</div>
+            <div class="vendor-field"><strong>Notes</strong>${escapeHtml(v.notes)}</div>
+            <div class="vendor-field"><strong>Future outlook</strong>${escapeHtml(v.future_outlook)}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+
+    <div class="detail-section">
+      <div class="detail-label">Future outlook (2026 and beyond)</div>
+      <div class="detail-content">${paragraphs(actor.future_outlook)}</div>
+    </div>
+  `;
+}
+
+// ============================================================
+// RENDER: actor detail in setup mode
+// ============================================================
+function renderActorInSetup(actorId, isSkipped) {
+  const actor = ACTORS.find(a => a.id === actorId);
+  const setup = SETUPS.find(s => s.id === currentMode);
+  if (!actor || !setup) return;
+
+  const mapping = setup.actor_map[actorId];
+  const panel = document.getElementById('detail-panel');
+  panel.classList.remove('empty');
+
+  if (isSkipped) {
+    panel.innerHTML = `
+      <div class="detail-header">
+        <h3 class="detail-title">${escapeHtml(actor.name)}</h3>
+        <span class="detail-badge">Skipped in this setup</span>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-label">Not used in ${escapeHtml(setup.short_name)}</div>
+        <div class="detail-content"><p>${escapeHtml(mapping.vendor)}</p><p>This is a notable architectural feature of this setup. In most payment flows, every actor in the universal model is present. ${escapeHtml(setup.short_name)} is one of the rare cases where the architecture collapses one of the layers — which is a big part of why it qualifies for simpler PCI scope.</p><p>To learn what this actor normally does, switch back to "Universal Flow" and click ${escapeHtml(actor.name)}.</p></div>
+      </div>
+    `;
+    return;
+  }
+
+  // Find the vendor for this actor in this setup
+  const vendorName = mapping.vendor;
+  // Try to find a matching VENDORS entry
+  const fullVendor = VENDORS.find(v => v.actor_roles.includes(actorId) && vendorName.toLowerCase().includes(v.name.split(' ')[0].toLowerCase()));
+
+  panel.innerHTML = `
+    <div class="detail-header">
+      <h3 class="detail-title">${escapeHtml(actor.name)} in ${escapeHtml(setup.short_name)}</h3>
+      <span class="detail-badge lit">${escapeHtml(setup.saq_type)}</span>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Vendor in this role</div>
+      <div class="detail-content"><p><strong>${escapeHtml(vendorName)}</strong></p></div>
+    </div>
+
+    ${fullVendor ? `
+    <div class="detail-section">
+      <div class="detail-label">About this vendor</div>
+      <div class="detail-content">
+        <p><strong>When used:</strong> ${escapeHtml(fullVendor.when_used)}</p>
+        <p><strong>Notes:</strong> ${escapeHtml(fullVendor.notes)}</p>
+        <p><strong>Future outlook:</strong> ${escapeHtml(fullVendor.future_outlook)}</p>
+      </div>
+    </div>
+    ` : ''}
+
+    <div class="detail-section">
+      <div class="detail-label">What this actor does (universal)</div>
+      <div class="detail-content">${paragraphs(actor.what_it_does)}</div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">PCI implications</div>
+      <div class="detail-content">${paragraphs(actor.pci_implications)}</div>
+    </div>
+  `;
+}
+
+// ============================================================
+// RENDER: full setup detail (when a setup is first selected)
+// ============================================================
+function renderSetupDetail(setupId) {
+  const setup = SETUPS.find(s => s.id === setupId);
+  if (!setup) return;
+
+  const panel = document.getElementById('detail-panel');
+  panel.classList.remove('empty');
+
+  panel.innerHTML = `
+    <div class="detail-header">
+      <h3 class="detail-title">${escapeHtml(setup.name)}</h3>
+      <span class="detail-badge lit">${escapeHtml(setup.saq_type)}</span>
+      <span class="detail-badge">${escapeHtml(setup.mid_count)}</span>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Description</div>
+      <div class="detail-content">${paragraphs(setup.description)}</div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Vendor stack</div>
+      <div class="detail-content">${escapeHtml(setup.vendor_stack)}</div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Notable quirks</div>
+      <div class="detail-content">${paragraphs(setup.notable_quirks)}</div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Future outlook</div>
+      <div class="detail-content">${paragraphs(setup.future_outlook)}</div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Tip</div>
+      <div class="detail-content"><p>The actors above are now showing this setup\'s vendors. Click any lit-up actor to drill into that step\'s vendor details, or pick a different setup to compare.</p></div>
+    </div>
+  `;
+}
+
+// ============================================================
+// CONTEXT TAB
+// ============================================================
+function renderContext() {
+  const container = document.getElementById('context-list');
+  container.innerHTML = CONTEXT.map(ctx => `
+    <div class="context-item">
+      <div class="context-topic">${escapeHtml(ctx.topic)}</div>
+      <div class="context-explanation">${paragraphs(ctx.explanation)}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// GLOSSARY TAB
+// ============================================================
+function renderGlossary() {
+  const container = document.getElementById('glossary-list');
+  const sorted = [...GLOSSARY].sort((a, b) => a.term.localeCompare(b.term));
+  container.innerHTML = sorted.map(g => `
+    <div class="glossary-item">
+      <div class="glossary-term">${escapeHtml(g.term)}</div>
+      <div class="glossary-def">${escapeHtml(g.definition)}</div>
+      ${g.related ? `<div class="glossary-related">Related: ${escapeHtml(g.related)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ============================================================
+// INITIAL RENDER
+// ============================================================
+renderActors();
+renderSelector();
+renderContext();
+renderGlossary();
+
+</script>
+</body>
+</html>
